@@ -8,20 +8,30 @@ jobs:
   build-and-push:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      
-      # Paso de login CORREGIDO (usa los nombres exactos de tus secrets)
-      - name: Login to Docker Hub
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-      
-      - name: Build and push
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          push: true
-          tags: |
-            ${{ secrets.DOCKERHUB_USERNAME }}/hola-mundo-flask:latest
-            ${{ secrets.DOCKERHUB_USERNAME }}/hola-mundo-flask:${{ github.sha }}
+    - uses: actions/checkout@v4
+    
+    - name: Login to Docker Hub
+      uses: docker/login-action@v3
+      with:
+        username: adrielapx  # Usuario directo en lugar de secret
+        password: ${{ secrets.DOCKERHUB_TOKEN }}  # Usando el token que copiaste
+    
+    - name: Build and push
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        push: true
+        tags: |
+          adrielapx/hola-mundo-flask:latest
+          adrielapx/hola-mundo-flask:${{ github.sha }}
+    
+  deploy-to-render:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    steps:
+    - name: Trigger Render Deploy
+      run: |
+        curl -X POST \
+          "https://api.render.com/v1/services/${{ secrets.RENDER_SERVICE_ID }}/deploys" \
+          -H "Authorization: Bearer ${{ secrets.RENDER_API_KEY }}" \
+          -H "Accept: application/json"
